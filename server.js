@@ -1,11 +1,13 @@
 const express = require("express");
 const logger = require("morgan");
+const methodOverride = require("method-override");
 const db = require("./db/connection.js");
 const Fruit = require("./models/fruit.js");
 
 const app = express();
 
 app.use(express.urlencoded({ extended: false }));
+app.use(methodOverride("_method"));
 app.use(logger("dev"));
 
 //routes
@@ -43,6 +45,29 @@ app.get("/fruits/:fruitId", async (req, res) => {
   res.render("fruits/show.ejs", {
     fruit: fruit,
   });
+});
+
+app.delete("/fruits/:fruitId", async (req, res) => {
+  await Fruit.findByIdAndDelete(req.params.fruitId);
+  res.redirect("/fruits");
+});
+
+app.get("/fruits/:fruitId/edit", async (req, res) => {
+  const fruitData = await Fruit.findById(req.params.fruitId);
+  res.render("fruits/edit.ejs", {
+    fruit: fruitData,
+  });
+});
+
+app.put("/fruits/:fruitId", async (req, res) => {
+  if (req.body.isReadyToEat === "on") {
+    req.body.isReadyToEat = true;
+  } else {
+    req.body.isReadyToEat = false;
+  }
+  await Fruit.findByIdAndUpdate(req.params.fruitId, req.body);
+
+  res.redirect(`/fruits/${req.params.fruitId}`)
 });
 
 db.on("connected", () => {
